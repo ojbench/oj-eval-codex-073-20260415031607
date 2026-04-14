@@ -70,6 +70,7 @@ reg        write_rd;
 reg [31:0] write_data;
 reg [31:0] next_pc;
 reg        branch_taken;
+reg        br_cond;
 reg [31:0] eff_addr;
 reg [31:0] ld_data;
 reg [1:0]  ld_size;        // 0=byte,1=half,2=word
@@ -152,15 +153,15 @@ always @(posedge clk_in) begin
           end
           7'b1100011: begin // Branch
             case (ir[14:12])
-              3'b000: branch_taken <= (rs1 == rs2);                     // BEQ
-              3'b001: branch_taken <= (rs1 != rs2);                     // BNE
-              3'b100: branch_taken <= ($signed(rs1) <  $signed(rs2));   // BLT
-              3'b101: branch_taken <= ($signed(rs1) >= $signed(rs2));   // BGE
-              3'b110: branch_taken <= (rs1 < rs2);                      // BLTU
-              3'b111: branch_taken <= (rs1 >= rs2);                     // BGEU
+              3'b000: br_cond = (rs1 == rs2);                     // BEQ
+              3'b001: br_cond = (rs1 != rs2);                     // BNE
+              3'b100: br_cond = ($signed(rs1) <  $signed(rs2));   // BLT
+              3'b101: br_cond = ($signed(rs1) >= $signed(rs2));   // BGE
+              3'b110: br_cond = (rs1 < rs2);                      // BLTU
+              3'b111: br_cond = (rs1 >= rs2);                     // BGEU
             endcase
-            // Choose next pc based on branch_taken
-            next_pc <= (branch_taken ? (pc + imm_b) : (pc + 32'd4));
+            // Choose next pc based on br_cond
+            next_pc <= (br_cond ? (pc + imm_b) : (pc + 32'd4));
             state <= S_COMMIT; // no rd write
           end
           7'b0000011: begin // Loads
