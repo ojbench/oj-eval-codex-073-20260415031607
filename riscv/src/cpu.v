@@ -159,7 +159,8 @@ always @(posedge clk_in) begin
               3'b110: branch_taken <= (rs1 < rs2);                      // BLTU
               3'b111: branch_taken <= (rs1 >= rs2);                     // BGEU
             endcase
-            next_pc <= pc + imm_b;
+            // Choose next pc based on branch_taken
+            next_pc <= (branch_taken ? (pc + imm_b) : (pc + 32'd4));
             state <= S_COMMIT; // no rd write
           end
           7'b0000011: begin // Loads
@@ -305,11 +306,10 @@ always @(posedge clk_in) begin
         if (write_rd && rd_id!=5'd0) begin
           regs[rd_id] <= write_data;
         end
-        // Update PC
-        pc <= branch_taken ? next_pc : next_pc; // next_pc already set appropriately
-        // Start next fetch
+        // Update PC and start next fetch
+        pc <= next_pc;
         mem_wr_r <= 1'b0;
-        mem_a_r <= branch_taken ? next_pc : next_pc;
+        mem_a_r <= next_pc;
         state <= S_FETCH1;
       end
     endcase
